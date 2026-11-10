@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>會考作文手寫評分</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f7f3ea; --paper2:#fffdf7; --ink:#24211c; --ink2:#5d574c; --muted:#8a8274;
+  --line:#e2d9c6; --grid:#e9c9bd; --red:#b8321f; --red-soft:#f6e1da; --green:#3c6e47; --green-soft:#e2eee3;
+  --amber:#a8741a; --amber-soft:#f5ead2; --radius:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:"Noto Sans TC",system-ui,sans-serif;font-size:16px;line-height:1.7;
+  background-image:linear-gradient(var(--paper),var(--paper));}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:24px;flex-wrap:wrap}
+h1{font-family:"Noto Serif TC",serif;font-weight:900;font-size:30px;letter-spacing:.06em;margin:0;line-height:1.2}
+h1 small{display:block;font-family:"Noto Sans TC";font-weight:500;font-size:14px;letter-spacing:.02em;color:var(--ink2);margin-top:6px}
+.rubric-btn{background:none;border:1px solid var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}
+.rubric-btn:hover{background:var(--ink);color:var(--paper)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:22px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--paper2);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.card h2{font-family:"Noto Serif TC",serif;font-size:18px;margin:0 0 12px;display:flex;align-items:center;gap:10px}
+.step{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--paper);font-size:13px;font-family:"Noto Sans TC"}
+label.f{display:block;font-size:14px;font-weight:500;color:var(--ink2);margin:14px 0 6px}
+input[type=text],textarea{width:100%;font:inherit;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+textarea{resize:vertical}
+input[type=text]:focus,textarea:focus{outline:2px solid var(--ink);outline-offset:1px}
+.drop{border:2px dashed #cbbfa6;border-radius:var(--radius);padding:26px 16px;text-align:center;cursor:pointer;transition:.15s;
+  background-color:#fff;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;background-position:-1px -1px}
+.drop.over{border-color:var(--red);background-color:var(--red-soft)}
+.drop .inner{display:inline-block;background:var(--paper2);padding:10px 18px;border-radius:8px;border:1px solid var(--line)}
+.drop b{font-family:"Noto Serif TC",serif;font-size:17px}
+.drop span{display:block;font-size:13px;color:var(--muted)}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;margin-top:12px}
+.thumb{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;aspect-ratio:3/4}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .n{position:absolute;left:6px;top:6px;background:var(--ink);color:#fff;font-size:12px;border-radius:4px;padding:0 6px}
+.thumb button{position:absolute;right:4px;top:4px;border:none;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;line-height:22px;padding:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-weight:700;border-radius:8px;padding:11px 18px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--paper)}
+.btn:hover:not(:disabled){background:#000}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover:not(:disabled){background:#efe8d9}
+.btn.red{background:var(--red);border-color:var(--red)}
+.btn.red:hover:not(:disabled){background:#9a2918}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.hint{font-size:13px;color:var(--muted);margin-top:8px}
+.status{font-size:14px;color:var(--ink2);margin-top:12px;min-height:22px;display:flex;align-items:center;gap:8px}
+.status.err{color:var(--red)}
+.spin{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:s .8s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+#transcript{min-height:220px;font-family:"Noto Serif TC",serif;font-size:16px;line-height:1.95}
+.count{font-size:12px;color:var(--muted);text-align:right;margin-top:4px}
+
+/* results */
+.empty{text-align:center;color:var(--muted);padding:50px 20px}
+.empty .big{font-family:"Noto Serif TC",serif;font-size:56px;color:var(--grid);line-height:1}
+.scorehead{display:flex;gap:20px;align-items:center;padding-bottom:18px;border-bottom:1px dashed var(--line);margin-bottom:18px}
+.seal{flex:none;width:118px;height:118px;border:4px solid var(--red);border-radius:12px;color:var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-4deg);
+  font-family:"Noto Serif TC",serif;background:rgba(184,50,31,.04);box-shadow:inset 0 0 0 3px var(--paper2),inset 0 0 0 5px rgba(184,50,31,.5)}
+.seal .num{font-size:58px;font-weight:900;line-height:1}
+.seal .unit{font-size:15px;font-weight:700;letter-spacing:.3em;margin-left:.3em}
+.level-name{font-family:"Noto Serif TC",serif;font-weight:700;font-size:20px}
+.summary{color:var(--ink2);margin-top:4px}
+.scale{display:flex;gap:4px;margin-top:10px}
+.scale i{flex:1;height:8px;border-radius:2px;background:var(--line)}
+.scale i.on{background:var(--red)}
+.scale-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:2px}
+.sec{margin-top:20px}
+.sec h3{font-family:"Noto Serif TC",serif;font-size:16px;margin:0 0 10px;padding-left:10px;border-left:4px solid var(--red)}
+.dims{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.dims{grid-template-columns:1fr}}
+.dim{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fff}
+.dim .top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.dim .name{font-weight:700}
+.tag{font-size:12px;font-weight:700;border-radius:999px;padding:1px 10px;white-space:nowrap}
+.t-a{background:var(--green-soft);color:var(--green)}
+.t-b{background:#e6eef3;color:#2f5b78}
+.t-c{background:var(--amber-soft);color:var(--amber)}
+.t-d{background:var(--red-soft);color:var(--red)}
+.dim p{margin:0;font-size:14px;color:var(--ink2)}
+.dim .ev{margin-top:6px;font-size:13px;color:var(--muted);font-family:"Noto Serif TC",serif}
+ul.list{margin:0;padding-left:20px}
+ul.list li{margin:4px 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.two{grid-template-columns:1fr}}
+.box{border-radius:8px;padding:12px 14px}
+.box.good{background:var(--green-soft)}
+.box.bad{background:var(--amber-soft)}
+.box h4{margin:0 0 6px;font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+th{font-weight:700;color:var(--ink2);font-size:13px;background:#faf6ec}
+td.wrong{color:var(--red);text-decoration:line-through;text-decoration-thickness:1px;font-family:"Noto Serif TC",serif}
+td.right{color:var(--green);font-weight:700;font-family:"Noto Serif TC",serif}
+.rew{border:1px solid var(--line);border-radius:8px;background:#fff;padding:12px;margin-bottom:10px}
+.rew .o{font-family:"Noto Serif TC",serif;color:var(--muted)}
+.rew .o::before{content:"原句　";font-family:"Noto Sans TC";font-size:12px;font-weight:700;color:var(--muted)}
+.rew .n{font-family:"Noto Serif TC",serif;color:var(--ink);margin-top:4px}
+.rew .n::before{content:"改寫　";font-family:"Noto Sans TC";font-size:12px;font-weight:700;color:var(--red)}
+.rew .w{font-size:13px;color:var(--ink2);margin-top:4px}
+.up{background:var(--ink);color:var(--paper);border-radius:8px;padding:14px 16px}
+.up h4{margin:0 0 6px;font-family:"Noto Serif TC",serif;font-size:15px}
+.up ul{margin:0;padding-left:20px}
+.disclaimer{font-size:12px;color:var(--muted);margin-top:18px;border-top:1px dashed var(--line);padding-top:10px}
+.resbar{display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px}
+.resbar .btn{padding:6px 12px;font-size:13px;font-weight:500}
+
+/* rubric modal */
+.modal{position:fixed;inset:0;background:rgba(36,33,28,.5);display:none;align-items:flex-start;justify-content:center;padding:30px 14px;overflow:auto;z-index:20}
+.modal.open{display:flex}
+.modal .panel{background:var(--paper2);max-width:760px;width:100%;border-radius:12px;padding:22px 24px;position:relative}
+.modal h2{font-family:"Noto Serif TC",serif;margin:0 0 4px}
+.modal .x{position:absolute;right:14px;top:12px;border:none;background:none;font-size:24px;cursor:pointer;color:var(--ink)}
+.lv{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.lv .k{font-family:"Noto Serif TC",serif;font-weight:900;color:var(--red);font-size:22px;line-height:1.2}
+.lv .k small{display:block;font-size:12px;color:var(--ink2);font-weight:500;font-family:"Noto Sans TC"}
+.lv p{margin:0;font-size:14px;color:var(--ink2)}
+.apicard{margin-bottom:22px}
+.apirow{display:flex;gap:12px;flex-wrap:wrap}
+select{width:100%;font:inherit;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.remember{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink2);margin-top:12px;cursor:pointer}
+.apicard a{color:var(--red)}
+.unavailable{background:var(--red-soft);color:var(--red);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:14px;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>會考作文 · 手寫評分<small>上傳手寫作文照片 → AI 辨識文字 → 依國中教育會考寫作測驗六級分規準評閱</small></h1>
+    <button class="rubric-btn" id="openRubric">查看評分規準</button>
+  </header>
+
+  <div class="unavailable" id="unavail"></div>
+
+  <div class="card apicard" id="apiCard" hidden>
+    <h2><span class="step">⚙</span>API 設定</h2>
+    <p class="hint" style="margin-top:0">此頁面不在 Claude 內執行，需要使用你自己的 <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Anthropic API 金鑰</a>。金鑰只會從你的瀏覽器直接送到 Anthropic，不會經過其他伺服器。</p>
+    <div class="apirow">
+      <div style="flex:2;min-width:220px">
+        <label class="f" for="apiKey">API 金鑰</label>
+        <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off">
+      </div>
+      <div style="flex:1;min-width:180px">
+        <label class="f" for="model">模型</label>
+        <select id="model">
+          <option value="claude-sonnet-5-5">Claude Sonnet 5.5（建議，速度與成本平衡）</option>
+          <option value="claude-opus-5-5">Claude Opus 5.5（最精準，較慢較貴）</option>
+        </select>
+      </div>
+    </div>
+    <label class="remember"><input type="checkbox" id="remember"> 在這台電腦記住金鑰（公用電腦請勿勾選）</label>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: input -->
+    <div>
+      <div class="card">
+        <h2><span class="step">1</span>上傳作文</h2>
+        <label class="f" for="topic">作文題目（建議填寫，評分「立意取材」時會參考）</label>
+        <input type="text" id="topic" placeholder="例如：從陌生到熟悉、我想開設的一家店">
+        <label class="f" for="guide">題目引導說明（選填）</label>
+        <textarea id="guide" rows="2" placeholder="可貼上題目的引導文字或寫作任務說明"></textarea>
+
+        <label class="f">作文照片（可多張，依頁序排列）</label>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="選擇或拖曳圖片">
+          <div class="inner"><b>點此選擇或拖曳照片</b><span>JPG / PNG / HEIC 轉檔後的圖片，最多 6 張</span></div>
+        </div>
+        <input type="file" id="file" accept="image/*" multiple hidden>
+        <div class="thumbs" id="thumbs"></div>
+        <p class="hint">拍照小技巧：正面俯拍、光線均勻、整頁入鏡，字跡越清楚辨識越準確。</p>
+
+        <div class="row">
+          <button class="btn red" id="goAll" disabled>辨識並評分</button>
+          <button class="btn ghost" id="goOcr" disabled>只辨識文字</button>
+        </div>
+        <div class="status" id="status"></div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2><span class="step">2</span>辨識結果（可修正）</h2>
+        <textarea id="transcript" placeholder="辨識後的文字會出現在這裡。若 AI 認錯字，請先修正再評分；也可以直接貼上已打好的作文。"></textarea>
+        <div class="count" id="count">0 字</div>
+        <p class="hint">AI 會盡量保留原文的錯字與標點；無法辨認的字以「□」表示。修正時請只改「辨識錯誤」，不要改學生本來寫錯的字，以免影響評分。</p>
+        <div class="row">
+          <button class="btn" id="goScore" disabled>依此文字評分</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: results -->
+    <div class="card" id="result">
+      <div class="empty">
+        <div class="big">級分</div>
+        <p>評分結果會顯示在這裡</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rubric modal -->
+<div class="modal" id="rubric" role="dialog" aria-modal="true">
+  <div class="panel">
+    <button class="x" id="closeRubric" aria-label="關閉">×</button>
+    <h2>會考寫作測驗評分規準</h2>
+    <p class="hint" style="margin-top:0">從四個向度綜合評定級分：立意取材、結構組織、遣詞造句、錯別字格式與標點符號。</p>
+    <div id="rubricBody"></div>
+  </div>
+</div>
+
+<script>
+const LEVELS = [
+  {lv:6,name:"表現優秀",desc:"能依據題目及寫作任務，適切地統整、運用材料，並能深入發揮；結構嚴謹，前後連貫，並能運用適當的連接詞連貫全文；能精確使用語詞，並有效運用各種句型，使文意表達流暢；幾乎沒有錯別字及格式、標點符號運用上的錯誤。"},
+  {lv:5,name:"表現良好",desc:"能依據題目及寫作任務，適切地統整、運用材料，並能有所發揮；結構完整，脈絡分明，但偶有轉折不流暢之處；能正確使用語詞，並運用各種句型，使文意表達順暢；少有錯別字及格式、標點符號運用上的錯誤，但不影響文意的表達。"},
+  {lv:4,name:"已達一般水準",desc:"能依據題目及寫作任務，選取適當材料，並尚能闡述說明；結構大致完整，但偶有轉折不流暢之處；能正確使用語詞，文意表達尚稱清楚，但有時會出現冗詞贅句，句型較無變化；有一些錯別字及格式、標點符號運用上的錯誤，但不至於造成理解上太大的困難。"},
+  {lv:3,name:"表現不充分",desc:"嘗試依據題目及寫作任務選取材料，但所選取的材料不甚適當或發展不夠充分；結構鬆散，或前後不連貫；用字遣詞不太恰當，或出現錯誤，或冗詞贅句過多；有一些錯別字及格式、標點符號運用上的錯誤，以致造成理解上的困難。"},
+  {lv:2,name:"表現顯然不足",desc:"雖嘗試依據題目及寫作任務選取材料，但所選取的材料不足，發展有限；結構本身不連貫；遣詞造句常有錯誤；錯別字、格式及標點符號錯誤頗多。"},
+  {lv:1,name:"表現極不足",desc:"僅解釋題目或寫作任務，或雖提及文章主題，但未能選取材料加以發展；沒有明顯的結構或結構組織凌亂；用字遣詞極不恰當，頗多錯誤，或文句支離破碎，難以理解；不能掌握格式，不會運用標點符號，錯別字極多。"},
+  {lv:0,name:"零級分",desc:"使用詩歌體寫作、完全離題、只抄寫題目或說明、空白卷。"}
+];
+document.getElementById("rubricBody").innerHTML = LEVELS.map(l =>
+  `<div class="lv"><div class="k">${l.lv}<small>${l.name}</small></div><p>${l.desc}</p></div>`).join("");
+
+const $ = id => document.getElementById(id);
+const rubric = $("rubric");
+$("openRubric").onclick = () => rubric.classList.add("open");
+$("closeRubric").onclick = () => rubric.classList.remove("open");
+rubric.onclick = e => { if (e.target === rubric) rubric.classList.remove("open"); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") rubric.classList.remove("open"); });
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- images ---------- */
+let images = []; // {blob, url}
+const MAX = 6;
+const drop = $("drop"), fileIn = $("file");
+drop.onclick = () => fileIn.click();
+drop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileIn.click(); } };
+fileIn.onchange = () => { addFiles(fileIn.files); fileIn.value = ""; };
+["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => addFiles(e.dataTransfer.files));
+
+async function addFiles(list) {
+  const files = [...list].filter(f => f.type.startsWith("image/"));
+  for (const f of files) {
+    if (images.length >= MAX) { setStatus(`最多 ${MAX} 張圖片`, true); break; }
+    try {
+      const blob = await shrink(f);
+      images.push({ blob, url: URL.createObjectURL(blob) });
+    } catch { setStatus(`無法讀取「${f.name}」，請改用 JPG 或 PNG`, true); }
+  }
+  renderThumbs();
+}
+// Resize large phone photos so the request stays light but handwriting stays legible
+function shrink(file, maxSide = 2000) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(img.src);
+      c.toBlob(b => b ? res(b) : rej(), "image/jpeg", 0.88);
+    };
+    img.onerror = rej;
+    img.src = URL.createObjectURL(file);
+  });
+}
+function renderThumbs() {
+  $("thumbs").innerHTML = images.map((im, i) =>
+    `<div class="thumb"><img src="${im.url}" alt="第 ${i+1} 頁"><span class="n">${i+1}</span><button data-i="${i}" aria-label="移除">×</button></div>`).join("");
+  $("thumbs").querySelectorAll("button").forEach(b => b.onclick = () => {
+    const i = +b.dataset.i; URL.revokeObjectURL(images[i].url); images.splice(i, 1); renderThumbs();
+  });
+  updateButtons();
+}
+
+/* ---------- state / ui ---------- */
+let sample = null, busy = false, maxImages = MAX, mode = "pending"; // "claude" | "api"
+function setStatus(msg, err = false, spinning = false) {
+  const s = $("status");
+  s.className = "status" + (err ? " err" : "");
+  s.innerHTML = (spinning ? '<span class="spin"></span>' : "") + esc(msg);
+}
+function updateButtons() {
+  const ready = mode === "claude" ? !!sample : mode === "api" ? $("apiKey").value.trim().length > 10 : false;
+  const ok = ready && !busy;
+  $("goAll").disabled = !ok || !images.length;
+  $("goOcr").disabled = !ok || !images.length;
+  $("goScore").disabled = !ok || $("transcript").value.trim().length < 5;
+}
+const countChars = t => (t.match(/[㐀-鿿豈-﫿]/g) || []).length;
+$("transcript").addEventListener("input", () => { $("count").textContent = countChars($("transcript").value) + " 字"; updateButtons(); });
+
+/* ---------- AI ---------- */
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
+};
+function enableApiMode() {
+  mode = "api";
+  $("apiCard").hidden = false;
+  const saved = store.get("essayGrader.key");
+  if (saved) { $("apiKey").value = saved; $("remember").checked = true; }
+  const m = store.get("essayGrader.model"); if (m) $("model").value = m;
+  const persist = () => {
+    store.set("essayGrader.key", $("remember").checked ? $("apiKey").value.trim() : null);
+    store.set("essayGrader.model", $("model").value);
+    updateButtons();
+  };
+  ["input", "change"].forEach(ev => { $("apiKey").addEventListener(ev, persist); $("remember").addEventListener(ev, persist); $("model").addEventListener(ev, persist); });
+  updateButtons();
+}
+(async () => {
+  // Inside Claude: window.claude.use("sample"). Elsewhere (e.g. GitHub Pages): user's own API key.
+  if (!window.claude?.use) { enableApiMode(); return; }
+  try { sample = await window.claude.use("sample"); } catch { sample = null; }
+  if (!sample) { enableApiMode(); return; }
+  mode = "claude";
+  try { const lim = await sample.limits(); if (!lim.images) { $("unavail").textContent = "此環境不支援圖片辨識，請直接把作文文字貼到「辨識結果」欄位後評分。"; $("unavail").style.display = "block"; maxImages = 0; } } catch {}
+  updateButtons();
+})();
+
+const blobToB64 = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(b); });
+
+/** One entry point for both modes. Returns the full text. */
+async function callAI(prompt, { images = [], onText } = {}) {
+  if (mode === "claude") {
+    const r = await sample(prompt, { images: images.length ? images : undefined, modelTier: "complex", cache: false,
+      onText: onText ? ({ text }) => { if (text && !/^Thinking/.test(text)) onText(text); } : undefined });
+    return r.text || "";
+  }
+  const key = $("apiKey").value.trim();
+  if (!key) throw new Error("請先輸入 API 金鑰");
+  const content = [];
+  for (const b of images) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: await blobToB64(b) } });
+  content.push({ type: "text", text: prompt });
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+    body: JSON.stringify({ model: $("model").value, max_tokens: 8000, stream: true, messages: [{ role: "user", content }] })
+  });
+  if (!resp.ok) {
+    let msg = resp.status + "";
+    try { const j = await resp.json(); msg = j.error?.message || msg; } catch {}
+    const e = new Error(msg); e.status = resp.status; throw e;
+  }
+  // Parse server-sent events
+  const reader = resp.body.getReader(), dec = new TextDecoder();
+  let buf = "", text = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let i;
+    while ((i = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+      if (!line.startsWith("data:")) continue;
+      let ev; try { ev = JSON.parse(line.slice(5)); } catch { continue; }
+      if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") { text += ev.delta.text; onText && onText(text); }
+      else if (ev.type === "error") throw new Error(ev.error?.message || "API 錯誤");
+    }
+  }
+  return text;
+}
+
+function errMsg(e) {
+  if (e?.code === "not_granted") return "尚未允許使用 AI，請在提示中按「允許」後再試一次。";
+  if (e?.code === "rate_limited" || e?.status === 429) return "使用次數暫時過多，請稍候一分鐘再試。";
+  if (e?.status === 401) return "API 金鑰無效，請確認金鑰是否正確。";
+  if (e?.status === 404) return "找不到所選模型，請換另一個模型試試。";
+  if (e instanceof TypeError) return "無法連線到 Anthropic API，請檢查網路連線。";
+  return "發生錯誤：" + (e?.message || e);
+}
+
+async function runOcr() {
+  if (!images.length) return false;
+  if (!maxImages) { setStatus("此環境不支援圖片辨識，請直接貼上文字。", true); return false; }
+  const prompt = `你是一位專門辨識台灣國中生中文手寫作文的轉錄員。附圖是同一篇作文，共 ${images.length} 張，請依圖片順序轉錄。
+
+規則：
+1. 逐字忠實轉錄學生「實際寫下的字」，包括錯別字、不通順的句子、標點符號（全形）。絕對不要幫學生改正錯字或潤飾。
+2. 若學生自己劃掉或塗改，只轉錄最後保留的字。
+3. 完全無法辨認的字以「□」表示；若能從筆畫大致判斷，就寫出最接近的字。
+4. 保留分段：每個新段落換一行（段首不需空格）。
+5. 若稿紙上方有題目，請在第一行寫「題目：……」，再空一行接著寫正文；若沒有就直接寫正文。
+6. 只輸出轉錄文字，不要任何說明、註解或前言。`;
+  const ta = $("transcript");
+  ta.value = "";
+  setStatus("正在辨識手寫文字…", false, true);
+  const out = await callAI(prompt, {
+    images: images.map(i => i.blob),
+    onText: text => { ta.value = text; $("count").textContent = countChars(text) + " 字"; }
+  });
+  let t = out.trim();
+  // pull out a title line if present
+  const m = t.match(/^題目[:：]\s*(.+)\n+/);
+  if (m) { if (!$("topic").value.trim()) $("topic").value = m[1].trim(); t = t.slice(m[0].length); }
+  ta.value = t;
+  $("count").textContent = countChars(t) + " 字";
+  return t.length > 0;
+}
+
+function extractJSON(s) {
+  s = s.replace(/```json|```/g, "");
+  const a = s.indexOf("{"), b = s.lastIndexOf("}");
+  if (a < 0 || b < 0) throw new Error("評分結果格式不正確，請再試一次");
+  return JSON.parse(s.slice(a, b + 1));
+}
+
+async function runScore() {
+  const essay = $("transcript").value.trim();
+  const topic = $("topic").value.trim();
+  const guide = $("guide").value.trim();
+  const rubricText = LEVELS.map(l => `${l.lv}級分（${l.name}）：${l.desc}`).join("\n");
+  const prompt = `你是資深的國中教育會考寫作測驗閱卷委員，熟悉會考六級分評分規準與歷年樣卷。請以會考閱卷標準，客觀、嚴謹地評閱以下學生作文，不要因為想鼓勵學生而給分寬鬆。
+
+【會考寫作測驗評分規準】
+評分從四個向度綜合判斷，給出 0–6 的整數級分（會考不給半級分）：
+- 立意取材：能否依據題目及寫作任務，適切選取、統整、運用材料並深入發揮。
+- 結構組織：結構是否完整嚴謹、段落分明、前後連貫、轉折流暢。
+- 遣詞造句：用詞是否精確、句型是否有變化、文意是否流暢，有無冗詞贅句。
+- 錯別字、格式與標點符號：錯別字多寡、標點運用、分段格式。
+
+各級分描述：
+${rubricText}
+
+補充判準：
+- 以整體印象為主，四向度為輔，級分應落在最符合整體表現的級別。
+- 篇幅明顯過短（例如少於 300 字）通常難以達到 4 級分以上；未完成的文章應適度降級。
+- 文中的「□」代表辨識不出的字，不要算成學生的錯字。
+- 偏離題目或寫作任務時，「立意取材」應明顯扣分；完全離題為 0 級分。
+
+【作文題目】${topic || "（未提供，請由內文推斷主題，並在評語中說明）"}
+${guide ? `【題目引導／寫作任務】${guide}\n` : ""}
+【學生作文】
+${essay}
+
+請只輸出一個 JSON 物件（不要 markdown、不要其他文字），格式如下：
+{
+  "level": 0到6的整數,
+  "summary": "一兩句總評（約 40–70 字）",
+  "dimensions": [
+    {"name":"立意取材","grade":"優|良|普通|待加強","comment":"具體評語（40–90 字）","evidence":"引用文中一小段作為依據（20 字內，可省略）"},
+    {"name":"結構組織","grade":"…","comment":"…","evidence":"…"},
+    {"name":"遣詞造句","grade":"…","comment":"…","evidence":"…"},
+    {"name":"錯別字、格式與標點符號","grade":"…","comment":"…","evidence":""}
+  ],
+  "strengths": ["優點 2–4 項，具體指出"],
+  "weaknesses": ["待改進 2–4 項，具體指出"],
+  "corrections": [{"original":"文中錯字或錯誤用語（含前後一兩字以便定位）","correct":"正確寫法","type":"錯別字|用詞|標點|語法"}],
+  "rewrites": [{"original":"原句","revised":"示範改寫","why":"改寫理由（30 字內）"}],
+  "next_level": ["若要提升到下一個級分，最關鍵的 2–3 個具體做法"]
+}
+corrections 最多列 15 項，只列確定的錯誤；rewrites 挑 2–3 句最值得改的句子。`;
+  setStatus("閱卷委員評分中…（約需 30–60 秒）", false, true);
+  showLoading();
+  const data = extractJSON(await callAI(prompt));
+  data.level = Math.max(0, Math.min(6, Math.round(Number(data.level))));
+  renderResult(data, { topic, chars: countChars(essay) });
+}
+
+async function guard(fn) {
+  if (busy) return;
+  busy = true; updateButtons();
+  try { await fn(); }
+  catch (e) { setStatus(errMsg(e), true); if ($("result").querySelector(".spin")) resetResult(); }
+  finally { busy = false; updateButtons(); }
+}
+$("goOcr").onclick = () => guard(async () => { const ok = await runOcr(); setStatus(ok ? "辨識完成。請核對文字，必要時修正後再按「依此文字評分」。" : "沒有辨識到文字，請確認照片清晰度。", !ok); });
+$("goAll").onclick = () => guard(async () => {
+  const ok = await runOcr();
+  if (!ok) { setStatus("沒有辨識到文字，請確認照片清晰度。", true); return; }
+  await runScore();
+  setStatus("評分完成。若辨識文字有誤，修正後可按「依此文字評分」重新評分。");
+});
+$("goScore").onclick = () => guard(async () => { await runScore(); setStatus("評分完成。"); });
+
+/* ---------- render ---------- */
+function resetResult() { $("result").innerHTML = '<div class="empty"><div class="big">級分</div><p>評分結果會顯示在這裡</p></div>'; }
+function showLoading() { $("result").innerHTML = '<div class="empty"><div class="big">閱卷中</div><p style="display:flex;gap:8px;justify-content:center;align-items:center"><span class="spin"></span>依四個向度逐項評閱…</p></div>'; }
+const gradeClass = g => ({ "優":"t-a", "良":"t-b", "普通":"t-c", "待加強":"t-d" }[g] || "t-c");
+let lastText = "";
+
+function renderResult(d, meta) {
+  const L = LEVELS.find(l => l.lv === d.level) || LEVELS[3];
+  const scale = [1,2,3,4,5,6].map(n => `<i class="${n <= d.level ? "on" : ""}"></i>`).join("");
+  const dims = (d.dimensions || []).map(x => `
+    <div class="dim"><div class="top"><span class="name">${esc(x.name)}</span><span class="tag ${gradeClass(x.grade)}">${esc(x.grade)}</span></div>
+    <p>${esc(x.comment)}</p>${x.evidence ? `<div class="ev">「${esc(x.evidence)}」</div>` : ""}</div>`).join("");
+  const li = a => (a || []).map(s => `<li>${esc(s)}</li>`).join("");
+  const corr = (d.corrections || []).length
+    ? `<table><thead><tr><th>原文</th><th>修正</th><th>類型</th></tr></thead><tbody>${d.corrections.map(c =>
+        `<tr><td class="wrong">${esc(c.original)}</td><td class="right">${esc(c.correct)}</td><td>${esc(c.type)}</td></tr>`).join("")}</tbody></table>`
+    : `<p class="hint" style="margin:0">未發現明顯的錯別字或標點錯誤。</p>`;
+  const rew = (d.rewrites || []).map(r => `<div class="rew"><div class="o">${esc(r.original)}</div><div class="n">${esc(r.revised)}</div>${r.why ? `<div class="w">${esc(r.why)}</div>` : ""}</div>`).join("");
+  const nextTitle = d.level >= 6 ? "保持水準的建議" : `邁向 ${d.level + 1} 級分`;
+
+  $("result").innerHTML = `
+    <div class="resbar"><button class="btn ghost" id="copyBtn">複製評語</button></div>
+    <div class="scorehead">
+      <div class="seal"><span class="num">${d.level}</span><span class="unit">級分</span></div>
+      <div style="flex:1;min-width:0">
+        <div class="level-name">${esc(L.name)}</div>
+        <div class="summary">${esc(d.summary)}</div>
+        <div class="scale">${scale}</div>
+        <div class="scale-lbl"><span>1</span><span>6</span></div>
+        <div class="hint" style="margin-top:4px">${meta.topic ? "題目：" + esc(meta.topic) + "　·　" : ""}約 ${meta.chars} 字</div>
+      </div>
+    </div>
+    <div class="sec"><h3>四向度評析</h3><div class="dims">${dims}</div></div>
+    <div class="sec"><h3>優點與待改進</h3><div class="two">
+      <div class="box good"><h4>做得好的地方</h4><ul class="list">${li(d.strengths)}</ul></div>
+      <div class="box bad"><h4>可以加強的地方</h4><ul class="list">${li(d.weaknesses)}</ul></div>
+    </div></div>
+    <div class="sec"><h3>錯別字與標點訂正</h3>${corr}</div>
+    ${rew ? `<div class="sec"><h3>句子改寫示範</h3>${rew}</div>` : ""}
+    <div class="sec"><div class="up"><h4>${nextTitle}</h4><ul>${li(d.next_level)}</ul></div></div>
+    <p class="disclaimer">本結果由 AI 依會考寫作測驗評分規準評閱，僅供練習參考；正式會考由兩位以上閱卷委員獨立評分。手寫辨識可能有誤，評分前請先核對辨識文字。</p>`;
+
+  lastText = [
+    `【會考作文評分】${meta.topic ? "題目：" + meta.topic : ""}`,
+    `級分：${d.level} 級分（${L.name}）`,
+    `總評：${d.summary}`, "",
+    "■ 四向度評析", ...(d.dimensions || []).map(x => `・${x.name}【${x.grade}】${x.comment}`), "",
+    "■ 優點", ...(d.strengths || []).map(s => "・" + s), "",
+    "■ 待改進", ...(d.weaknesses || []).map(s => "・" + s), "",
+    "■ 錯別字與標點訂正", ...((d.corrections || []).length ? d.corrections.map(c => `・${c.original} → ${c.correct}（${c.type}）`) : ["・無明顯錯誤"]), "",
+    "■ 句子改寫示範", ...(d.rewrites || []).map(r => `・原句：${r.original}\n  改寫：${r.revised}`), "",
+    `■ ${nextTitle}`, ...(d.next_level || []).map(s => "・" + s)
+  ].join("\n");
+  $("copyBtn").onclick = async e => {
+    try { await navigator.clipboard.writeText(lastText); e.target.textContent = "已複製 ✓"; }
+    catch { e.target.textContent = "無法複製"; }
+    setTimeout(() => e.target.textContent = "複製評語", 1800);
+  };
+}
+</script>
+</body>
+</html>
