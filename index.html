@@ -112,6 +112,8 @@ td.right{color:var(--green);font-weight:700;font-family:"Noto Serif TC",serif}
 .up ul{margin:0;padding-left:20px}
 .disclaimer{font-size:12px;color:var(--muted);margin-top:18px;border-top:1px dashed var(--line);padding-top:10px}
 .resbar{display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px}
+.dlbox{background:var(--green-soft);color:var(--green);border-radius:8px;padding:8px 12px;font-size:14px;margin-bottom:12px}
+.dlbox a{color:var(--green);font-weight:700;text-decoration:underline;cursor:pointer}
 .resbar .btn{padding:6px 12px;font-size:13px;font-weight:500}
 
 /* rubric modal */
@@ -636,6 +638,18 @@ async function buildDocx(d, meta, L, nextTitle) {
   return Packer.toBlob(doc);
 }
 
+function showDocxLink(url, filename) {
+  let box = document.getElementById("docxLinkBox");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "docxLinkBox"; box.className = "dlbox";
+    $("result").querySelector(".resbar").after(box);
+  }
+  box.innerHTML = `若沒有自動開始下載，請<a id="docxLink">點這裡下載 Word 檔</a>（或在連結上按右鍵 →「另存連結」）。`;
+  const link = box.querySelector("a");
+  link.href = url; link.download = filename; link.title = filename;
+}
+
 async function downloadDocx(btn, d, meta, L, nextTitle) {
   const label = btn.textContent;
   btn.disabled = true; btn.textContent = "產生中…";
@@ -644,19 +658,22 @@ async function downloadDocx(btn, d, meta, L, nextTitle) {
     const safe = (meta.topic || "作文").replace(/[\\/:*?"<>|]/g, "").slice(0, 30);
     const filename = `會考作文評分_${safe}_${d.level}級分.docx`;
     let dl = null;
-    if (mode === "claude") { try { dl = await window.claude.use("downloads"); } catch {} }
+    if (window.claude?.use) { try { dl = await window.claude.use("downloads"); } catch {} }
     if (dl) {
-      await dl.save({ filename, data: blob });
-    } else {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob); a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      try { await dl.save({ filename, data: blob }); btn.textContent = "已下載 ✓"; return; }
+      catch (err) { if (err?.code === "declined") { btn.textContent = "已取消"; return; } /* otherwise fall through to link */ }
     }
-    btn.textContent = "已下載 ✓";
+    // Standard browser download + a visible link the user can click directly
+    // (some in-app/embedded browsers block downloads started by script).
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    showDocxLink(url, filename);
+    btn.textContent = "已產生 ✓";
   } catch (e) {
-    btn.textContent = e?.code === "declined" ? "已取消" : "下載失敗";
-    if (e?.code !== "declined") setStatus("Word 檔產生失敗：" + (e?.message || e), true);
+    btn.textContent = "下載失敗";
+    setStatus("Word 檔產生失敗：" + (e?.message || e), true);
   } finally {
     setTimeout(() => { btn.textContent = label; btn.disabled = false; }, 2000);
   }
